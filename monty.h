@@ -1,103 +1,149 @@
-#ifndef MONTY
-#define MONTY
+/*
+ * File: monty_funcs_1.c
+ * Auth: Bennett Dixon
+ *       Brennan D Baraban
+ */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <ctype.h>
+#include "monty.h"
+
+void monty_push(stack_t **stack, unsigned int line_number);
+void monty_pall(stack_t **stack, unsigned int line_number);
+void monty_pint(stack_t **stack, unsigned int line_number);
+void monty_pop(stack_t **stack, unsigned int line_number);
+void monty_swap(stack_t **stack, unsigned int line_number);
 
 /**
- * struct stack_s - doubly linked list representation of a stack (or queue)
- * @n: integer
- * @prev: points to the previous element of the stack (or queue)
- * @next: points to the next element of the stack (or queue)
- *
- * Description: doubly linked list node structure
- * for stack, queues, LIFO, FIFO Holberton project
+ * monty_push - Pushes a value to a stack_t linked list.
+ * @stack: A pointer to the top mode node of a stack_t linked list.
+ * @line_number: The current working line number of a Monty bytecodes file.
  */
-typedef struct stack_s
+void monty_push(stack_t **stack, unsigned int line_number)
 {
-	int n;
-	struct stack_s *prev;
-	struct stack_s *next;
-} stack_t;
+	stack_t *tmp, *new;
+	int i;
+
+	new = malloc(sizeof(stack_t));
+	if (new == NULL)
+	{
+		set_op_tok_error(malloc_error());
+		return;
+	}
+
+	if (op_toks[1] == NULL)
+	{
+		set_op_tok_error(no_int_error(line_number));
+		return;
+	}
+
+	for (i = 0; op_toks[1][i]; i++)
+	{
+		if (op_toks[1][i] == '-' && i == 0)
+			continue;
+		if (op_toks[1][i] < '0' || op_toks[1][i] > '9')
+		{
+			set_op_tok_error(no_int_error(line_number));
+			return;
+		}
+	}
+	new->n = atoi(op_toks[1]);
+
+	if (check_mode(*stack) == STACK) /* STACK mode insert at front */
+	{
+		tmp = (*stack)->next;
+		new->prev = *stack;
+		new->next = tmp;
+		if (tmp)
+			tmp->prev = new;
+		(*stack)->next = new;
+	}
+	else /* QUEUE mode insert at end */
+	{
+		tmp = *stack;
+		while (tmp->next)
+			tmp = tmp->next;
+		new->prev = tmp;
+		new->next = NULL;
+		tmp->next = new;
+	}
+}
 
 /**
- * struct globals - global structure to use in the functions
- * @lifo: is stack or queue
- * @cont: current line
- * @arg: second parameter inside the current line
- * @head: doubly linked list
- * @fd: file descriptor
- * @buffer: input text
- *
- * Description: doubly linked list node structure
- * for stack, queues, LIFO, FIFO Holberton project
+ * monty_pall - Prints the values of a stack_t linked list.
+ * @stack: A pointer to the top mode node of a stack_t linked list.
+ * @line_number: The current working line number of a Monty bytecodes file.
  */
-typedef struct globals
+void monty_pall(stack_t **stack, unsigned int line_number)
 {
-	int lifo;
-	unsigned int cont;
-	char  *arg;
-	stack_t *head;
-	FILE *fd;
-	char *buffer;
-} global_t;
+	stack_t *tmp = (*stack)->next;
+
+	while (tmp)
+	{
+		printf("%d\n", tmp->n);
+		tmp = tmp->next;
+	}
+	(void)line_number;
+}
 
 /**
- * struct instruction_s - opcode and its function
- * @opcode: the opcode
- * @f: function to handle the opcode
- *
- * Description: opcode and its function
- * for stack, queues, LIFO, FIFO Holberton project
+ * monty_pint - Prints the top value of a stack_t linked list.
+ * @stack: A pointer to the top mode node of a stack_t linked list.
+ * @line_number: The current working line number of a Monty bytecodes file.
  */
-typedef struct instruction_s
+void monty_pint(stack_t **stack, unsigned int line_number)
 {
-	char *opcode;
-	void (*f)(stack_t **stack, unsigned int line_number);
-} instruction_t;
+	if ((*stack)->next == NULL)
+	{
+		set_op_tok_error(pint_error(line_number));
+		return;
+	}
 
-extern global_t vglo;
+	printf("%d\n", (*stack)->next->n);
+}
 
-/* opcode_instructuions*/
-void _push(stack_t **stack, unsigned int line_number);
-void _pall(stack_t **stack, unsigned int line_number);
-void _pint(stack_t **doubly, unsigned int cline);
-void _pop(stack_t **doubly, unsigned int cline);
-void _swap(stack_t **doubly, unsigned int cline);
-void _queue(stack_t **doubly, unsigned int cline);
-void _stack(stack_t **doubly, unsigned int cline);
-void _add(stack_t **doubly, unsigned int cline);
-void _nop(stack_t **doubly, unsigned int cline);
-void _sub(stack_t **doubly, unsigned int cline);
-void _div(stack_t **doubly, unsigned int cline);
-void _mul(stack_t **doubly, unsigned int cline);
-void _mod(stack_t **doubly, unsigned int cline);
-void _pchar(stack_t **doubly, unsigned int cline);
-void _pstr(stack_t **doubly, unsigned int cline);
-void _rotl(stack_t **doubly, unsigned int cline);
-void _rotr(stack_t **doubly, unsigned int cline);
 
-/*get function*/
-void (*get_opcodes(char *opc))(stack_t **stack, unsigned int line_number);
+/**
+ * monty_pop - Removes the top value element of a stack_t linked list.
+ * @stack: A pointer to the top mode node of a stack_t linked list.
+ * @line_number: The current working line number of a Monty bytecodes file.
+ */
+void monty_pop(stack_t **stack, unsigned int line_number)
+{
+	stack_t *next = NULL;
 
-/*imported functions*/
-int _sch(char *s, char c);
-char *_strtoky(char *s, char *d);
-void *_realloc(void *ptr, unsigned int old_size, unsigned int new_size);
-void *_calloc(unsigned int nmemb, unsigned int size);
-int _strcmp(char *s1, char *s2);
+	if ((*stack)->next == NULL)
+	{
+		set_op_tok_error(pop_error(line_number));
+		return;
+	}
 
-/* doubly linked list functions */
-stack_t *add_dnodeint_end(stack_t **head, const int n);
-stack_t *add_dnodeint(stack_t **head, const int n);
-void free_dlistint(stack_t *head);
+	next = (*stack)->next->next;
+	free((*stack)->next);
+	if (next)
+		next->prev = *stack;
+	(*stack)->next = next;
+}
 
-/* main */
-void free_vglo(void);
+/**
+ * monty_swap - Swaps the top two value elements of a stack_t linked list.
+ * @stack: A pointer to the top mode node of a stack_t linked list.
+ * @line_number: The current working line number of a Monty bytecodes file.
+ */
+void monty_swap(stack_t **stack, unsigned int line_number)
+{
+	stack_t *tmp;
 
-#endif
+	if ((*stack)->next == NULL || (*stack)->next->next == NULL)
+	{
+		set_op_tok_error(short_stack_error(line_number, "swap"));
+		return;
+	}
+
+	tmp = (*stack)->next->next;
+	(*stack)->next->next = tmp->next;
+	(*stack)->next->prev = tmp;
+	if (tmp->next)
+		tmp->next->prev = (*stack)->next;
+	tmp->next = (*stack)->next;
+	tmp->prev = *stack;
+	(*stack)->next = tmp;
+}

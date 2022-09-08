@@ -1,5 +1,6 @@
 #include "monty.h"
 #include <string.h>
+#include <stdio.h>
 
 void free_tokens(void);
 unsigned int token_arr_len(void);
@@ -105,7 +106,6 @@ void (*get_op_func(char *opcode))(stack_t**, unsigned int)
 /**
  * run_monty - Primary function to execute a Monty bytecodes script.
  * @script_fd: File descriptor for an open Monty bytecodes script.
- *
  * Return: EXIT_SUCCESS on success, respective error code on failure.
  */
 int run_monty(FILE *script_fd)
